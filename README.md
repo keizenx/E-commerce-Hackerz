@@ -1,111 +1,220 @@
-# Django Hackerz E-Commerce # Django Hackerz
+# Django Hackerz E-Commerce# Django Hackerz E-Commerce # Django Hackerz
 
 
 
-![Django Hackerz Banner](https://img.shields.io/badge/Django-5.0.1-green.svg)Une plateforme e-commerce et blog sécurisée développée avec Django.
+A modern e-commerce platform with multi-vendor support, built with Django.
 
 
 
-A sleek and modern e-commerce platform with multi-vendor support, built with Django.##  Fonctionnalités
+## What You Can Do![Django Hackerz Banner](https://img.shields.io/badge/Django-5.0.1-green.svg)Une plateforme e-commerce et blog sécurisée développée avec Django.
 
 
 
-[![Platform](https://img.shields.io/badge/Platform-Web-blue.svg)](https://www.djangoproject.com/)### E-commerce
+**For Customers:**
 
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)- Système de panier d'achat
+- Browse and search products by category, price, and availability
 
-[![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)](https://www.python.org/)- Gestion des produits par catégories
+- Add products to shopping cart and manage quantitiesA sleek and modern e-commerce platform with multi-vendor support, built with Django.##  Fonctionnalités
 
-[![Contributions](https://img.shields.io/badge/Contributions-Welcome-brightgreen.svg)](https://github.com/keizenx/E-commerce-Hackerz/pulls)- Interface vendeur
+- Apply discount coupons at checkout
 
-- Système d'avis et de notation
+- Save products to wishlist for later
 
-[Features](#features) • [Installation](#installation) • [Usage](#usage) • [API](#api) • [License](#license)- Processus de paiement sécurisé
+- Place orders and track their status
+
+- Leave reviews and ratings on purchased products[![Platform](https://img.shields.io/badge/Platform-Web-blue.svg)](https://www.djangoproject.com/)### E-commerce
+
+- Receive order confirmations and invoices by email
+
+- Manage your profile and shipping addresses[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)- Système de panier d'achat
+
+
+
+**For Vendors:**[![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)](https://www.python.org/)- Gestion des produits par catégories
+
+- Register as a seller and get approved by admin
+
+- Add, edit, and delete your own products[![Contributions](https://img.shields.io/badge/Contributions-Welcome-brightgreen.svg)](https://github.com/keizenx/E-commerce-Hackerz/pulls)- Interface vendeur
+
+- Upload product images and descriptions
+
+- Manage product stock and pricing- Système d'avis et de notation
+
+- View sales statistics and performance
+
+- Track orders for your products[Features](#features) • [Installation](#installation) • [Usage](#usage) • [API](#api) • [License](#license)- Processus de paiement sécurisé
+
+- Note: You cannot purchase your own products
 
 - Gestion des commandes
 
----
+**For Administrators:**
 
-### Blog
+- Approve or reject vendor applications---
 
-## ✨ Features- Articles avec système de catégories et tags
+- Manage all products, orders, and users
 
-- Commentaires et réponses
+- Create and manage discount coupons### Blog
 
-### 🛍️ **E-Commerce Core**- Formatage riche du contenu
+- Monitor platform activity
+
+- Access full admin dashboard## ✨ Features- Articles avec système de catégories et tags
+
+
+
+**Blog Features:**- Commentaires et réponses
+
+- Read articles with rich formatted content
+
+- Comment on blog posts### 🛍️ **E-Commerce Core**- Formatage riche du contenu
+
+- Browse articles by categories and tags
 
 - **Product Catalog**: Browse products with advanced filtering by category, price, and availability- Interface d'administration
 
-- **Shopping Cart**: Real-time cart management with quantity adjustments
+**API Access:**
 
-- **Order Management**: Complete order processing with status tracking### Sécurité
+- Complete REST API for all features- **Shopping Cart**: Real-time cart management with quantity adjustments
 
-- **Payment Integration**: Secure checkout process with invoice generation- Authentification utilisateur
+- Token-based authentication
 
-- **Reviews & Ratings**: Customer feedback system with verified purchases- Gestion des rôles (admin, vendeur, client)
+- Interactive documentation (Swagger/ReDoc)- **Order Management**: Complete order processing with status tracking### Sécurité
 
-- Protection contre les attaques CSRF
 
-### 👥 **Multi-Vendor System**- Validation des données
+
+---- **Payment Integration**: Secure checkout process with invoice generation- Authentification utilisateur
+
+
+
+## Installation- **Reviews & Ratings**: Customer feedback system with verified purchases- Gestion des rôles (admin, vendeur, client)
+
+
+
+**Requirements:**- Protection contre les attaques CSRF
+
+- Python 3.12 or higher
+
+- pip### 👥 **Multi-Vendor System**- Validation des données
+
+- Git
 
 - **Vendor Dashboard**: Dedicated interface for sellers to manage their products
 
+**Quick Setup:**
+
 - **Smart Restrictions**: Vendors cannot purchase their own products (automatic UI adaptation)##  Technologies
 
-- **Product Management**: Add, edit, and delete products with stock tracking
+```bash
 
-- **Sales Analytics**: Real-time statistics and performance metrics- Python 3.x
+# 1. Clone the repository- **Product Management**: Add, edit, and delete products with stock tracking
 
-- **Approval System**: Admin verification for new vendors- Django
+git clone https://github.com/keizenx/E-commerce-Hackerz.git
 
-- SQLite (base de données)
+cd E-commerce-Hackerz- **Sales Analytics**: Real-time statistics and performance metrics- Python 3.x
+
+
+
+# 2. Create virtual environment- **Approval System**: Admin verification for new vendors- Django
+
+python -m venv venv
+
+# Windows: venv\Scripts\activate- SQLite (base de données)
+
+# Linux/Mac: source venv/bin/activate
 
 ### 💰 **Discount System**- HTML/CSS/JavaScript
 
-- **Coupon Codes**: Create promotional codes with flexible rules- Bootstrap Icons
+# 3. Install dependencies
 
-- **Discount Types**: Percentage or fixed amount discounts
+pip install -r requirements.txt- **Coupon Codes**: Create promotional codes with flexible rules- Bootstrap Icons
 
-- **Usage Limits**: Set maximum uses and expiration dates## 📦 Installation
 
-- **Minimum Purchase**: Configure minimum order values for coupons
 
-1. Clonez le dépôt :
+# 4. Configure environment- **Discount Types**: Percentage or fixed amount discounts
 
-### 📝 **Integrated Blog**```bash
+cp .env.example .env
 
-- **Rich Content**: Markdown support for articles with syntax highlightinggit clone https://github.com/keizenx/Django_Hackerz.git
+# Edit .env with your settings- **Usage Limits**: Set maximum uses and expiration dates## 📦 Installation
 
-- **Comments System**: Threaded discussions on blog postscd Django_Hackerz
 
-- **Categories & Tags**: Organize content for easy discovery```
 
-- **SEO Friendly**: Optimized meta tags and URLs
+# 5. Setup database- **Minimum Purchase**: Configure minimum order values for coupons
 
-2. Créez un environnement virtuel :
+python manage.py migrate
 
-### 🔐 **Security & Authentication**```bash
+python manage.py createsuperuser1. Clonez le dépôt :
 
-- **User Management**: Registration with email confirmationpython -m venv venv
 
-- **Two-Factor Authentication**: Optional 2FA for enhanced securitysource venv/bin/activate  # Linux/Mac
 
-- **Role-Based Access**: Separate permissions for customers, vendors, and admins# ou
+# 6. Run server### 📝 **Integrated Blog**```bash
 
-- **Profile System**: Customizable user profiles with shipping addressesvenv\Scripts\activate  # Windows
+python manage.py runserver
 
-```
+```- **Rich Content**: Markdown support for articles with syntax highlightinggit clone https://github.com/keizenx/Django_Hackerz.git
 
-### 🎨 **Modern UI/UX**
 
-- **Dark Theme**: Elegant dark mode interface throughout the application3. Installez les dépendances :
 
-- **Responsive Design**: Seamless experience across all devices```bash
+Visit http://127.0.0.1:8000- **Comments System**: Threaded discussions on blog postscd Django_Hackerz
 
-- **AJAX Integration**: Dynamic content loading without page refreshespip install -r requirements.txt
 
-- **Real-time Notifications**: Instant feedback for user actions```
 
+---- **Categories & Tags**: Organize content for easy discovery```
+
+
+
+## Technology Stack- **SEO Friendly**: Optimized meta tags and URLs
+
+
+
+**Backend:** Django 5.0.1, Django REST Framework, SQLite/PostgreSQL2. Créez un environnement virtuel :
+
+
+
+**Frontend:** HTML5, CSS3, JavaScript### 🔐 **Security & Authentication**```bash
+
+
+
+**Other:** Pillow (images), xhtml2pdf (invoices), Markdown (content)- **User Management**: Registration with email confirmationpython -m venv venv
+
+
+
+---- **Two-Factor Authentication**: Optional 2FA for enhanced securitysource venv/bin/activate  # Linux/Mac
+
+
+
+## API Documentation- **Role-Based Access**: Separate permissions for customers, vendors, and admins# ou
+
+
+
+Interactive API documentation available at:- **Profile System**: Customizable user profiles with shipping addressesvenv\Scripts\activate  # Windows
+
+- Swagger UI: http://127.0.0.1:8000/swagger/
+
+- ReDoc: http://127.0.0.1:8000/redoc/```
+
+
+
+---### 🎨 **Modern UI/UX**
+
+
+
+## License- **Dark Theme**: Elegant dark mode interface throughout the application3. Installez les dépendances :
+
+
+
+MIT License - see LICENSE file for details.- **Responsive Design**: Seamless experience across all devices```bash
+
+
+
+---- **AJAX Integration**: Dynamic content loading without page refreshespip install -r requirements.txt
+
+
+
+## Author- **Real-time Notifications**: Instant feedback for user actions```
+
+
+
+Keizen - [@keizenx](https://github.com/keizenx)
 
 
 ### 🔌 **REST API**4. Effectuez les migrations :
