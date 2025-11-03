@@ -128,10 +128,19 @@ def product_detail(request, product_slug):
     else:
         review_form = ReviewForm()
     
-    # Calculate average rating
-    avg_rating = 0
-    if reviews:
-        avg_rating = sum(review.rating for review in reviews) / len(reviews)
+    # Calculate average rating using Avg aggregate
+    reviews_stats = reviews.aggregate(avg_rating=Avg('rating'), count=Count('id'))
+    avg_rating = reviews_stats['avg_rating'] or 0
+    review_count = reviews_stats['count']
+    
+    # Vérifier si l'utilisateur a acheté le produit
+    has_purchased = False
+    if request.user.is_authenticated:
+        has_purchased = Order.objects.filter(
+            user=request.user,
+            items__product=product,
+            paid=True
+        ).exists()
     
     context = {
         'product': product,
@@ -139,7 +148,9 @@ def product_detail(request, product_slug):
         'related_products': related_products,
         'reviews': reviews,
         'review_form': review_form,
-        'avg_rating': avg_rating,
+        'avg_rating': round(avg_rating, 1),
+        'review_count': review_count,
+        'has_purchased': has_purchased,
     }
     
     return render(request, 'shop/product_detail.html', context)
@@ -160,11 +171,47 @@ def add_to_cart(request, product_id):
             return redirect('login')
     
     product = get_object_or_404(Product, id=product_id)
+    
+    # Vérifier si l'utilisateur est le propriétaire du produit
+    if product.vendor and hasattr(request.user, 'profile') and hasattr(request.user.profile, 'vendor'):
+        if product.vendor == request.user.profile.vendor:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'message': "Vous ne pouvez pas commander vos propres produits."
+                }, status=403)
+            else:
+                messages.error(request, "Vous ne pouvez pas commander vos propres produits.")
+                return redirect('shop:product_detail', product_slug=product.slug)
+    
+    # Vérifier si le produit est en stock
+    if product.stock <= 0:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'message': f"{product.name} est actuellement en rupture de stock."
+            }, status=400)
+        else:
+            messages.error(request, f"{product.name} est actuellement en rupture de stock.")
+            return redirect('shop:product_detail', slug=product.slug)
+    
     cart_id = _cart_id(request)
     
     try:
         # Vérifier si le produit est déjà dans le panier
         cart_item = CartItem.objects.get(product=product, cart_id=cart_id)
+        
+        # Vérifier si on peut ajouter une unité de plus
+        if cart_item.quantity + 1 > product.stock:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'message': f"Stock insuffisant. Il reste seulement {product.stock} unité(s) disponible(s)."
+                }, status=400)
+            else:
+                messages.error(request, f"Stock insuffisant. Il reste seulement {product.stock} unité(s) disponible(s).")
+                return redirect('shop:cart_detail')
+        
         cart_item.quantity += 1
         cart_item.save()
     except CartItem.DoesNotExist:
@@ -222,7 +269,7 @@ def remove_from_cart(request, product_id):
     else:
         cart_item.delete()
         
-    return redirect('shop:cart')
+    return redirect('shop:cart_detail')
 
 
 def delete_from_cart(request, product_id):
@@ -231,7 +278,7 @@ def delete_from_cart(request, product_id):
     cart_item = CartItem.objects.get(product=product, cart=cart)
     cart_item.delete()
     
-    return redirect('shop:cart')
+    return redirect('shop:cart_detail')
 
 
 def checkout(request, total=0, counter=0, cart_items=None):
@@ -343,6 +390,18 @@ def cart_add(request, product_id):
     # Récupérer le produit et les données
     product = get_object_or_404(Product, id=product_id)
     
+    # Vérifier si l'utilisateur est le propriétaire du produit
+    if product.vendor and hasattr(request.user, 'profile') and hasattr(request.user.profile, 'vendor'):
+        if product.vendor == request.user.profile.vendor:
+            if is_ajax:
+                return JsonResponse({
+                    'success': False,
+                    'message': "Vous ne pouvez pas commander vos propres produits."
+                }, status=403)
+            else:
+                messages.error(request, "Vous ne pouvez pas commander vos propres produits.")
+                return redirect('shop:product_detail', product_slug=product.slug)
+    
     # Déterminer la quantité à ajouter
     if is_ajax:
         try:
@@ -392,19 +451,25 @@ def cart_add(request, product_id):
         })
     else:
         messages.success(request, f"{product.name} a été ajouté à votre panier.")
-        return redirect('shop:cart')
+        return redirect('shop:cart_detail')
 
 
 def cart_remove(request, product_id):
+    """Decrement quantity or remove item if quantity is 1"""
     cart = Cart.objects.get(cart_id=_cart_id(request))
     product = get_object_or_404(Product, id=product_id)
     cart_item = CartItem.objects.get(product=product, cart=cart)
-    cart_item.delete()
+    
+    if cart_item.quantity > 1:
+        cart_item.quantity -= 1
+        cart_item.save()
+    else:
+        cart_item.delete()
     
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         return JsonResponse({
             'status': 'success',
-            'message': 'Produit retiré du panier',
+            'message': 'Quantité mise à jour',
             'cart_items_count': sum(item.quantity for item in CartItem.objects.filter(cart=cart, active=True))
         })
     
@@ -461,6 +526,7 @@ def add_review(request, product_id):
     if not request.user.is_authenticated:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
+                'status': 'error',
                 'success': False, 
                 'message': 'Veuillez vous connecter pour laisser un avis.',
                 'redirect': '/login/'
@@ -474,6 +540,25 @@ def add_review(request, product_id):
     
     product = get_object_or_404(Product, id=product_id)
     
+    # Vérifier si l'utilisateur a acheté le produit (TEMPORAIREMENT DÉSACTIVÉ POUR TEST)
+    has_purchased = True  # FORCER À TRUE POUR TESTER
+    # has_purchased = Order.objects.filter(
+    #     user=request.user,
+    #     items__product=product,
+    #     paid=True  # Seulement les commandes payées
+    # ).exists()
+    
+    # if not has_purchased:
+    #     if is_ajax:
+    #         return JsonResponse({
+    #             'status': 'error',
+    #             'success': False,
+    #             'message': 'Vous devez avoir acheté ce produit pour laisser un avis.'
+    #         }, status=403)
+    #     else:
+    #         messages.error(request, "Vous devez avoir acheté ce produit pour laisser un avis.")
+    #         return redirect('shop:product_detail', product_slug=product.slug)
+    
     if request.method == 'POST':
         if is_ajax:
             try:
@@ -482,7 +567,7 @@ def add_review(request, product_id):
                 title = data.get('title', '').strip()
                 comment = data.get('comment', '').strip()
             except:
-                return JsonResponse({'success': False, 'message': 'Données invalides'}, status=400)
+                return JsonResponse({'status': 'error', 'success': False, 'message': 'Données invalides'}, status=400)
         else:
             rating = int(request.POST.get('rating', 0))
             title = request.POST.get('title', '').strip()
@@ -492,6 +577,7 @@ def add_review(request, product_id):
         if rating < 1 or rating > 5:
             if is_ajax:
                 return JsonResponse({
+                    'status': 'error',
                     'success': False, 
                     'message': 'La note doit être comprise entre 1 et 5'
                 }, status=400)
@@ -502,6 +588,7 @@ def add_review(request, product_id):
         if not title:
             if is_ajax:
                 return JsonResponse({
+                    'status': 'error',
                     'success': False, 
                     'message': 'Le titre ne peut pas être vide'
                 }, status=400)
@@ -512,6 +599,7 @@ def add_review(request, product_id):
         if not comment:
             if is_ajax:
                 return JsonResponse({
+                    'status': 'error',
                     'success': False, 
                     'message': 'Le commentaire ne peut pas être vide'
                 }, status=400)
@@ -531,9 +619,16 @@ def add_review(request, product_id):
             existing_review.save()
             
             if is_ajax:
+                    # Calculer la note moyenne
+                avg_rating = product.reviews.aggregate(Avg('rating'))['rating__avg'] or 0
+                
                 return JsonResponse({
+                    'status': 'success',
                     'success': True,
                     'message': 'Votre avis a été mis à jour avec succès',
+                    'user': request.user.username,
+                    'count': product.reviews.count(),
+                    'avg_rating': round(avg_rating, 1),
                     'review': {
                         'id': existing_review.id,
                         'rating': existing_review.rating,
@@ -558,9 +653,16 @@ def add_review(request, product_id):
             )
             
             if is_ajax:
+                # Calculer la note moyenne
+                avg_rating = product.reviews.aggregate(Avg('rating'))['rating__avg'] or 0
+                
                 return JsonResponse({
+                    'status': 'success',
                     'success': True,
                     'message': 'Votre avis a été ajouté avec succès',
+                    'user': request.user.username,
+                    'count': product.reviews.count(),
+                    'avg_rating': round(avg_rating, 1),
                     'review': {
                         'id': new_review.id,
                         'rating': new_review.rating,
@@ -584,6 +686,12 @@ def buy_now(request, product_id):
         return redirect('login')
         
     product = get_object_or_404(Product, id=product_id, available=True)
+    
+    # Vérifier si l'utilisateur est le propriétaire du produit
+    if product.vendor and hasattr(request.user, 'profile') and hasattr(request.user.profile, 'vendor'):
+        if product.vendor == request.user.profile.vendor:
+            messages.error(request, "Vous ne pouvez pas commander vos propres produits.")
+            return redirect('shop:product_detail', product_slug=product.slug)
     
     if request.method == 'POST':
         quantity = int(request.POST.get('quantity', 1))

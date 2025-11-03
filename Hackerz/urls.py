@@ -8,7 +8,7 @@ from .views import (
     newsletter_signup, home_view, newsletter_subscribe, terms_view, privacy_view,
     update_account, add_to_wishlist, remove_from_wishlist, get_wishlist,
     AjaxPasswordResetView, AjaxPasswordResetConfirmView, confirm_email, registration_success,
-    resend_confirmation, become_vendor, group_users_view
+    resend_confirmation, become_vendor, group_users_view, change_password, toggle_2fa
 )
 from django.contrib.auth import views as auth_views
 
@@ -16,9 +16,10 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('blog/', include('Hackerz_blog.urls', namespace='blog')),
     path('shop/', include('Hackerz_E_commerce.urls', namespace='shop')),
+    path('wishlist/', include('Hackerz.urls_wishlist', namespace='wishlist')),
     
     # API URLs
-    path('api/v1/', include('api.urls')),
+    path('api/v1/', include('api.urls', namespace='api')),
     
     path('', home_view, name='home'),
     path('contact/', contact_view, name='contact'),
@@ -26,6 +27,8 @@ urlpatterns = [
     path('register/', register_view, name='register'),
     path('logout/', logout_view, name='logout'),
     path('profile/', profile_view, name='profile'),
+    path('change-password/', change_password, name='change_password'),
+    path('toggle-2fa/', toggle_2fa, name='toggle_2fa'),
     path('newsletter-signup/', newsletter_signup, name='newsletter_signup'),
     path('newsletter/subscribe/', newsletter_subscribe, name='newsletter_subscribe'),
     path('terms/', terms_view, name='terms'),

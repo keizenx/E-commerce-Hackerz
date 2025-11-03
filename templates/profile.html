@@ -387,14 +387,16 @@
               </div>
               
               <div id="2fa-setup" style="display: none; margin-top: 1.5rem;">
-                <div style="text-align: center; margin-bottom: 1.5rem;">
-                  <img src="{% static 'images/qr-placeholder.png' %}" alt="QR Code d'authentification" style="width: 150px; height: 150px; background-color: white; padding: 10px; border-radius: 4px;">
-                  <p style="margin-top: 0.5rem; font-size: 0.875rem; color: hsl(240, 5%, 64.9%);">Scannez ce QR code avec votre application d'authentification</p>
+                <div style="text-align: center; margin-bottom: 1.5rem; padding: 1.5rem; background-color: hsla(142, 100%, 50%, 0.1); border: 1px solid hsl(142, 100%, 50%); border-radius: 0.5rem;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="hsl(142, 100%, 50%)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1rem;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                  <p id="2fa-email-message" style="margin: 0; font-size: 1rem; color: hsl(142, 100%, 70%); font-weight: 600;">Un code de vérification a été envoyé à votre email</p>
+                  <p style="margin-top: 0.5rem; font-size: 0.875rem; color: hsl(240, 5%, 64.9%);">Vérifiez votre boîte de réception</p>
                 </div>
                 
                 <div class="form-group" style="margin-bottom: 1rem;">
-                  <label for="auth-code" class="form-label">Code d'authentification</label>
-                  <input type="text" id="auth-code" name="auth-code" class="form-input" placeholder="XXXXXX" maxlength="6">
+                  <label for="auth-code" class="form-label">Code de vérification (12 caractères)</label>
+                  <input type="text" id="auth-code" name="auth-code" class="form-input" placeholder="Ex: aB3dEf7gH9jK" maxlength="12">
+                  <span style="font-size: 0.875rem; color: hsl(240, 5%, 64.9%); margin-top: 0.5rem; display: block;">Entrez le code reçu par email</span>
                 </div>
                 
                 <button id="verify-2fa" class="form-btn">Vérifier et activer</button>
@@ -845,35 +847,55 @@
           
           // Validation simple
           if (newPassword !== confirmPassword) {
-            showFeedback('Les mots de passe ne correspondent pas.', 'error');
+            showFeedback(passwordFeedback, 'Les mots de passe ne correspondent pas.', 'error');
             return;
           }
           
           if (newPassword.length < 8) {
-            showFeedback('Le mot de passe doit contenir au moins 8 caractères.', 'error');
+            showFeedback(passwordFeedback, 'Le mot de passe doit contenir au moins 8 caractères.', 'error');
             return;
           }
           
-          // Simuler une mise à jour réussie
-          setTimeout(function() {
-            showFeedback('Votre mot de passe a été mis à jour avec succès.', 'success');
-            
-            // Réinitialiser le formulaire
-            passwordForm.reset();
-          }, 1000);
+          // Envoyer la requête AJAX
+          const formData = new FormData();
+          formData.append('old_password', currentPassword);
+          formData.append('new_password1', newPassword);
+          formData.append('new_password2', confirmPassword);
+          formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+          
+          fetch('{% url "change_password" %}', {
+            method: 'POST',
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              showFeedback(passwordFeedback, data.message || 'Votre mot de passe a été mis à jour avec succès.', 'success');
+              passwordForm.reset();
+            } else {
+              showFeedback(passwordFeedback, data.message || 'Erreur lors de la mise à jour.', 'error');
+            }
+          })
+          .catch(error => {
+            console.error('Erreur:', error);
+            showFeedback(passwordFeedback, 'Une erreur est survenue. Veuillez réessayer.', 'error');
+          });
         });
       }
       
-      function showFeedback(message, type) {
-        if (passwordFeedback) {
-          passwordFeedback.textContent = message;
-          passwordFeedback.className = 'feedback';
-          passwordFeedback.classList.add(type);
-          passwordFeedback.style.display = 'block';
+      function showFeedback(feedbackElement, message, type) {
+        if (feedbackElement) {
+          feedbackElement.textContent = message;
+          feedbackElement.className = 'feedback';
+          feedbackElement.classList.add(type);
+          feedbackElement.style.display = 'block';
           
           // Masquer le message après un délai
           setTimeout(function() {
-            passwordFeedback.style.display = 'none';
+            feedbackElement.style.display = 'none';
           }, 5000);
         }
       }
@@ -884,11 +906,73 @@
       const verifyTwoFA = document.getElementById('verify-2fa');
       
       if (twoFAToggle) {
+        // Définir l'état initial du toggle
+        twoFAToggle.checked = {{ user.profile.two_factor_enabled|lower }};
+        
         twoFAToggle.addEventListener('change', function() {
           if (this.checked) {
-            twoFASetup.style.display = 'block';
+            // Activer la 2FA - générer le QR code
+            const formData = new FormData();
+            formData.append('action', 'enable');
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+            
+            fetch('{% url "toggle_2fa" %}', {
+              method: 'POST',
+              headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+              },
+              body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                // Afficher le message d'email envoyé
+                const emailMsg = document.getElementById('2fa-email-message');
+                if (emailMsg) {
+                  emailMsg.textContent = data.message;
+                }
+                twoFASetup.style.display = 'block';
+              } else {
+                alert(data.message || 'Erreur lors de l\'activation de la 2FA');
+                this.checked = false;
+              }
+            })
+            .catch(error => {
+              console.error('Erreur:', error);
+              alert('Erreur de connexion');
+              this.checked = false;
+            });
           } else {
-            twoFASetup.style.display = 'none';
+            // Désactiver la 2FA
+            if (confirm('Êtes-vous sûr de vouloir désactiver la double authentification ?')) {
+              const formData = new FormData();
+              formData.append('action', 'disable');
+              formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+              
+              fetch('{% url "toggle_2fa" %}', {
+                method: 'POST',
+                headers: {
+                  'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+              })
+              .then(response => response.json())
+              .then(data => {
+                if (data.success) {
+                  twoFASetup.style.display = 'none';
+                  alert('Double authentification désactivée');
+                } else {
+                  alert('Erreur lors de la désactivation');
+                  this.checked = true;
+                }
+              })
+              .catch(error => {
+                console.error('Erreur:', error);
+                this.checked = true;
+              });
+            } else {
+              this.checked = true;
+            }
           }
         });
       }
@@ -898,14 +982,38 @@
           const authCode = document.getElementById('auth-code').value;
           
           // Validation simple
-          if (!authCode || authCode.length !== 6 || isNaN(authCode)) {
-            alert('Veuillez entrer un code à 6 chiffres valide.');
+          if (!authCode || authCode.length !== 12) {
+            alert('Veuillez entrer le code de vérification complet (12 caractères).');
             return;
           }
           
-          // Simuler une vérification réussie
-          alert('Double authentification activée avec succès!');
-          twoFASetup.style.display = 'none';
+          // Vérifier le code
+          const formData = new FormData();
+          formData.append('action', 'verify');
+          formData.append('token', authCode);
+          formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+          
+          fetch('{% url "toggle_2fa" %}', {
+            method: 'POST',
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              alert('Double authentification activée avec succès!');
+              twoFASetup.style.display = 'none';
+              document.getElementById('auth-code').value = '';
+            } else {
+              alert(data.message || 'Code invalide. Veuillez réessayer.');
+            }
+          })
+          .catch(error => {
+            console.error('Erreur:', error);
+            alert('Erreur de connexion');
+          });
         });
       }
       

@@ -34,7 +34,7 @@ class Product(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
     name = models.CharField(max_length=200)
     slug = models.SlugField(max_length=200, unique=True)
-    image = models.ImageField(upload_to='products/%Y/%m/%d/')
+    image = models.ImageField(upload_to='products/%Y/%m/%d/', blank=True, null=True)
     description = models.TextField(blank=True)
     regular_price = models.DecimalField(max_digits=10, decimal_places=2)
     price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -186,4 +186,58 @@ class OrderItem(models.Model):
         return f'{self.id}'
     
     def get_cost(self):
-        return self.price * self.quantity 
+        return self.price * self.quantity
+
+
+class Coupon(models.Model):
+    """Modèle pour les codes promo et réductions"""
+    DISCOUNT_TYPE_CHOICES = (
+        ('percentage', 'Pourcentage'),
+        ('fixed', 'Montant fixe'),
+    )
+    
+    code = models.CharField(max_length=50, unique=True, verbose_name='Code promo')
+    discount_type = models.CharField(max_length=10, choices=DISCOUNT_TYPE_CHOICES, default='percentage')
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Valeur de la réduction')
+    min_purchase = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name='Achat minimum')
+    max_uses = models.IntegerField(default=0, verbose_name='Utilisations maximales', help_text='0 = illimité')
+    used_count = models.IntegerField(default=0, verbose_name='Nombre d\'utilisations')
+    valid_from = models.DateTimeField(verbose_name='Valide à partir de')
+    valid_to = models.DateTimeField(verbose_name='Valide jusqu\'à')
+    active = models.BooleanField(default=True)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = 'Code promo'
+        verbose_name_plural = 'Codes promo'
+        ordering = ['-created']
+    
+    def __str__(self):
+        return self.code
+    
+    def is_valid(self):
+        """Vérifie si le coupon est valide"""
+        now = timezone.now()
+        if not self.active:
+            return False, "Ce code promo n'est pas actif"
+        if now < self.valid_from:
+            return False, "Ce code promo n'est pas encore valide"
+        if now > self.valid_to:
+            return False, "Ce code promo a expiré"
+        if self.max_uses > 0 and self.used_count >= self.max_uses:
+            return False, "Ce code promo a atteint son nombre maximum d'utilisations"
+        return True, "Code promo valide"
+    
+    def calculate_discount(self, total):
+        """Calcule la réduction pour un montant donné"""
+        if self.discount_type == 'percentage':
+            discount = total * (self.discount_value / 100)
+        else:  # fixed
+            discount = self.discount_value
+        return min(discount, total)  # Ne pas dépasser le total
+    
+    def apply_discount(self, total):
+        """Applique la réduction et retourne le nouveau total"""
+        discount = self.calculate_discount(total)
+        return total - discount, discount

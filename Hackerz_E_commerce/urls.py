@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import views_coupon
 
 app_name = 'shop'
 
@@ -10,8 +11,15 @@ urlpatterns = [
     path('cart/', views.cart_detail, name='cart_detail'),
     path('cart/add/<int:product_id>/', views.cart_add, name='cart_add'),
     path('cart/remove/<int:product_id>/', views.cart_remove, name='cart_remove'),
+    path('cart/delete/<int:product_id>/', views.delete_from_cart, name='delete_from_cart'),
     path('cart/update/<int:product_id>/', views.cart_update, name='cart_update'),
     path('cart/count/', views.cart_count, name='cart_count'),
+    
+    # Coupons
+    path('coupon/apply/', views_coupon.apply_coupon, name='apply_coupon'),
+    path('coupon/remove/', views_coupon.remove_coupon, name='remove_coupon'),
+    path('coupon/validate/', views_coupon.validate_coupon_ajax, name='validate_coupon'),
+    
     path('checkout/', views.checkout, name='checkout'),
     path('add_review/<int:product_id>/', views.add_review, name='add_review'),
     path('buy_now/<int:product_id>/', views.buy_now, name='buy_now'),
@@ -23,4 +31,4 @@ urlpatterns = [
     path('vendor/product/<int:product_id>/edit/', views.edit_product, name='edit_product'),
     path('vendor/product/<int:product_id>/delete/', views.delete_product, name='delete_product'),
     path('order/<int:order_id>/invoice/', views.generate_invoice_pdf, name='generate_invoice'),
-] 
+]

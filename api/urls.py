@@ -7,6 +7,8 @@ from drf_yasg import openapi
 
 from . import views
 
+app_name = 'api'
+
 # Configuration de Swagger/OpenAPI
 schema_view = get_schema_view(
     openapi.Info(
@@ -28,9 +30,9 @@ router = DefaultRouter()
 router.register(r'users', views.UserViewSet)
 
 # Routes pour l'e-commerce
-router.register(r'shop/categories', views.ShopCategoryViewSet, basename='shop-category')
-router.register(r'shop/products', views.ProductViewSet)
-router.register(r'shop/reviews', views.ReviewViewSet)
+router.register(r'shop/categories', views.ShopCategoryViewSet, basename='shopcategory')
+router.register(r'shop/products', views.ProductViewSet, basename='product')
+router.register(r'shop/reviews', views.ReviewViewSet, basename='review')
 router.register(r'shop/orders', views.OrderViewSet, basename='order')
 
 # Routes pour le blog

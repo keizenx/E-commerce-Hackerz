@@ -121,16 +121,19 @@
     margin-bottom: 1rem;
   }
   
-  .rating-btn {
+  .star-button {
     background: transparent;
     border: none;
-    font-size: 1.5rem;
-    color: hsl(240, 5%, 30%);
+    font-size: 2.5rem;
+    color: #666;
     cursor: pointer;
+    transition: transform 0.2s;
+    padding: 0;
+    line-height: 1;
   }
   
-  .rating-btn.active {
-    color: hsl(142, 100%, 50%);
+  .star-button:hover {
+    transform: scale(1.2);
   }
   
   .submit-review-btn {
@@ -319,35 +322,62 @@
         </div>
         
         <div class="product-actions">
-          <div class="quantity">
-            <button type="button" class="quantity-btn decrement">-</button>
-            <input type="number" class="quantity-input" value="1" min="1" max="{{ product.stock }}" id="quantity-input">
-            <button type="button" class="quantity-btn increment">+</button>
-          </div>
-          
-          <div class="product-buttons">
-            <button type="button" id="add-to-cart-btn" class="add-to-cart-btn" data-product-id="{{ product.id }}">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-              <span>Ajouter au panier</span>
-            </button>
+          {% comment %} Vérifier si l'utilisateur est le propriétaire du produit {% endcomment %}
+          {% if product.vendor and user.is_authenticated and user.profile.is_vendor and product.vendor == user.profile.vendor %}
+            {# L'utilisateur est le propriétaire de ce produit #}
+            <div style="background-color: hsl(240, 5%, 10%); border: 1px solid hsl(142, 100%, 50%); border-radius: 0.5rem; padding: 1.5rem; text-align: center;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="hsl(142, 100%, 50%)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 1rem; display: block;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+              <h3 style="margin-bottom: 0.5rem; font-size: 1.25rem; color: hsl(142, 100%, 50%);">Ceci est votre produit</h3>
+              <p style="color: hsl(240, 5%, 64.9%); margin-bottom: 1rem;">Vous ne pouvez pas commander vos propres articles.</p>
+              <a href="{% url 'shop:vendor_product_detail' product.id %}" style="display: inline-flex; align-items: center; gap: 0.5rem; background-color: hsl(142, 100%, 50%); color: black; padding: 0.75rem 1.5rem; border-radius: 0.25rem; text-decoration: none; font-weight: 600; transition: background-color 0.2s;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                <span>Gérer ce produit</span>
+              </a>
+            </div>
+          {% else %}
+            {# L'utilisateur n'est PAS le propriétaire - Afficher les boutons normalement #}
+            <div class="quantity">
+              <button type="button" class="quantity-btn decrement">-</button>
+              <input type="number" class="quantity-input" value="1" min="1" max="{{ product.stock }}" id="quantity-input">
+              <button type="button" class="quantity-btn increment">+</button>
+            </div>
             
-            {% if user.is_authenticated %}
-            <button type="button" id="buy-now-btn" class="buy-now-btn" data-product-id="{{ product.id }}">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 17 12 21 16 17"></polyline><line x1="12" y1="12" x2="12" y2="21"></line><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"></path></svg>
-              <span>Acheter maintenant</span>
-            </button>
-            {% else %}
-            <a href="{% url 'login' %}" class="buy-now-btn" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
-              <span>Se connecter pour acheter</span>
-            </a>
-            {% endif %}
-          </div>
+            <div class="product-buttons">
+              {% if product.stock > 0 %}
+              <button type="button" id="add-to-cart-btn" class="add-to-cart-btn" data-product-id="{{ product.id }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+                <span>Ajouter au panier</span>
+              </button>
+              
+              {% if user.is_authenticated %}
+              <button type="button" id="buy-now-btn" class="buy-now-btn" data-product-id="{{ product.id }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 17 12 21 16 17"></polyline><line x1="12" y1="12" x2="12" y2="21"></line><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"></path></svg>
+                <span>Acheter maintenant</span>
+              </button>
+              {% endif %}
+              {% else %}
+              <button type="button" class="add-to-cart-btn" disabled style="background-color: hsl(0, 84%, 60%); cursor: not-allowed; opacity: 0.6;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                <span>Rupture de stock</span>
+              </button>
+              {% endif %}
+              
+              {% if product.stock > 0 and not user.is_authenticated %}
+              <a href="{% url 'login' %}" class="buy-now-btn" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+                <span>Se connecter pour acheter</span>
+              </a>
+              {% endif %}
+            </div>
+          {% endif %}
           
+          {% comment %} Afficher le bouton wishlist seulement si ce n'est pas le produit du vendor {% endcomment %}
+          {% if not product.vendor or not user.is_authenticated or not user.profile.is_vendor or product.vendor != user.profile.vendor %}
           <button type="button" id="wishlist-btn" class="wishlist-btn" data-product-id="{{ product.id }}" style="display: flex; align-items: center; gap: 0.5rem; background: none; border: none; color: white; margin-top: 1rem; cursor: pointer; font-weight: 600;">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="{% if product in user.wishlist.products.all %}hsl(142, 100%, 50%){% else %}none{% endif %}" stroke="hsl(142, 100%, 50%)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="wishlist-icon"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
             <span>Ajouter à ma liste de souhaits</span>
           </button>
+          {% endif %}
         </div>
         
         {% if product.note %}
@@ -402,7 +432,7 @@
                 <span class="star-empty">★</span>
               {% endif %}
             {% endfor %}
-            <span style="margin-left: 0.5rem;">{{ avg_rating|floatformat:1 }}/5 ({{ reviews|length }} avis)</span>
+            <span style="margin-left: 0.5rem;"><strong>{{ avg_rating|floatformat:1 }}/5</strong> ({{ review_count }} avis)</span>
           </div>
         </div>
       </div>
@@ -415,16 +445,6 @@
                 <h3 class="review-title">{{ review.title }}</h3>
                 <div class="review-meta">
                   Par {{ review.user.username }} le {{ review.created|date:"d/m/Y" }}
-                  {% if review.user == user %}
-                    <button type="button" class="edit-review-btn" 
-                            data-id="{{ review.id }}" 
-                            data-rating="{{ review.rating }}" 
-                            data-title="{{ review.title }}" 
-                            data-comment="{{ review.comment }}"
-                            style="background: none; border: none; color: hsl(142, 100%, 50%); cursor: pointer; margin-left: 1rem; font-size: 0.875rem;">
-                      Modifier
-                    </button>
-                  {% endif %}
                 </div>
               </div>
               <div class="stars">
@@ -450,37 +470,165 @@
       
       <!-- Review Form -->
       {% if user.is_authenticated %}
-        <div class="review-form">
-          <h3 class="review-form-header" id="review-form-title">Ajouter un avis</h3>
-          <form id="review-form" method="post">
-            {% csrf_token %}
-            <div class="form-group">
-              <label class="form-label">Note</label>
-              <div class="rating-input">
-                {% for i in "12345" %}
-                  <button type="button" class="rating-btn" data-rating="{{ forloop.counter }}">★</button>
-                {% endfor %}
+        {% if has_purchased %}
+          <div class="review-form">
+            <h3 class="review-form-header" id="review-form-title">Ajouter un avis</h3>
+            <form id="review-form" method="post">
+              {% csrf_token %}
+              <div class="form-group">
+                <label class="form-label">Note</label>
+                <div class="rating-input" id="star-rating" style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                  {% for i in "12345" %}
+                    <button type="button" class="star-button" data-rating="{{ forloop.counter }}">★</button>
+                  {% endfor %}
+                </div>
+                <input type="hidden" name="rating" id="rating-value" value="5">
               </div>
-              <input type="hidden" name="rating" id="rating-value" value="5">
-            </div>
+              
+              <div class="form-group">
+                <label for="{{ review_form.title.id_for_label }}" class="form-label">{{ review_form.title.label }}</label>
+                {{ review_form.title }}
+              </div>
+              
+              <div class="form-group">
+                <label for="{{ review_form.comment.id_for_label }}" class="form-label">{{ review_form.comment.label }}</label>
+                {{ review_form.comment }}
+              </div>
+              
+              <div style="display: flex; gap: 1rem;">
+                <button type="submit" class="submit-review-btn">Soumettre mon avis</button>
+                <button type="button" id="cancel-edit-btn" style="display: none; background-color: hsl(240, 5%, 30%); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 0.25rem; font-weight: 600; cursor: pointer;">Annuler</button>
+              </div>
+            </form>
+            <div id="review-response" style="margin-top: 1rem; display: none;"></div>
+            <script>
+              // Script pour les étoiles - INLINE
+              (function() {
+                console.log(' Script étoiles chargé INLINE');
+                
+                const starContainer = document.getElementById('star-rating');
+                if (!starContainer) {
+                  console.error('Container non trouvé');
+                  return;
+                }
+                
+                const stars = starContainer.querySelectorAll('.star-button');
+                const ratingInput = document.getElementById('rating-value');
+                console.log('Étoiles trouvées:', stars.length);
+                
+                function setStars(rating) {
+                  console.log('setStars:', rating);
+                  if (ratingInput) ratingInput.value = rating;
+                  
+                  for (let i = 0; i < stars.length; i++) {
+                    if (i < rating) {
+                      stars[i].style.color = '#00ff41';
+                    } else {
+                      stars[i].style.color = '#666';
+                    }
+                  }
+                }
+                
+                // Init avec 5 étoiles
+                setStars(5);
+                
+                // Events
+                stars.forEach(function(star) {
+                  star.onclick = function(e) {
+                    e.preventDefault();
+                    const r = parseInt(this.getAttribute('data-rating'));
+                    console.log('Clic étoile:', r);
+                    setStars(r);
+                    return false;
+                  };
+                });
+              })();
+            </script>
             
-            <div class="form-group">
-              <label for="{{ review_form.title.id_for_label }}" class="form-label">{{ review_form.title.label }}</label>
-              {{ review_form.title }}
-            </div>
-            
-            <div class="form-group">
-              <label for="{{ review_form.comment.id_for_label }}" class="form-label">{{ review_form.comment.label }}</label>
-              {{ review_form.comment }}
-            </div>
-            
-            <div style="display: flex; gap: 1rem;">
-              <button type="submit" class="submit-review-btn">Soumettre mon avis</button>
-              <button type="button" id="cancel-edit-btn" style="display: none; background-color: hsl(240, 5%, 30%); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 0.25rem; font-weight: 600; cursor: pointer;">Annuler</button>
-            </div>
-          </form>
-          <div id="review-response" style="margin-top: 1rem; display: none;"></div>
-        </div>
+            <script>
+            // Soumission du formulaire d'avis - INLINE
+            (function() {
+              const reviewForm = document.getElementById('review-form');
+              if (!reviewForm) return;
+              
+              console.log('✅ Formulaire avis trouvé, ajout du listener');
+              
+              reviewForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                console.log('📝 Soumission du formulaire...');
+                
+                const rating = document.getElementById('rating-value').value;
+                const titleInput = reviewForm.querySelector('input[name="title"]');
+                const commentInput = reviewForm.querySelector('textarea[name="comment"]');
+                
+                const title = titleInput ? titleInput.value : '';
+                const comment = commentInput ? commentInput.value : '';
+                
+                console.log('Rating:', rating, 'Title:', title, 'Comment:', comment);
+                
+                const csrfToken = reviewForm.querySelector('input[name="csrfmiddlewaretoken"]').value;
+                const productId = {{ product.id }};
+                
+                console.log('Envoi vers:', '/shop/add_review/' + productId + '/');
+                
+                fetch('/shop/add_review/' + productId + '/', {
+                  method: 'POST',
+                  headers: {
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    rating: rating,
+                    title: title,
+                    comment: comment
+                  })
+                })
+                .then(response => {
+                  console.log('Réponse reçue:', response.status);
+                  return response.json();
+                })
+                .then(data => {
+                  console.log('Données:', data);
+                  const responseDiv = document.getElementById('review-response');
+                  
+                  if (data.status === 'success') {
+                    responseDiv.textContent = data.message;
+                    responseDiv.style.color = 'hsl(142, 100%, 50%)';
+                    responseDiv.style.display = 'block';
+                    
+                    // Réinitialiser le formulaire
+                    reviewForm.reset();
+                    document.getElementById('rating-value').value = 5;
+                    
+                    // Recharger la page après 2 secondes
+                    setTimeout(function() {
+                      location.reload();
+                    }, 2000);
+                  } else {
+                    responseDiv.textContent = data.message || 'Erreur';
+                    responseDiv.style.color = 'hsl(0, 100%, 65%)';
+                    responseDiv.style.display = 'block';
+                  }
+                })
+                .catch(error => {
+                  console.error('Erreur:', error);
+                  const responseDiv = document.getElementById('review-response');
+                  if (responseDiv) {
+                    responseDiv.textContent = 'Une erreur est survenue. Veuillez réessayer.';
+                    responseDiv.style.color = 'hsl(0, 100%, 65%)';
+                    responseDiv.style.display = 'block';
+                  }
+                });
+              });
+            })();
+            </script>
+          </div>
+        {% else %}
+          <div class="login-to-review">
+            <p>Vous devez avoir acheté ce produit pour laisser un avis.</p>
+          </div>
+        {% endif %}
       {% else %}
         <div class="login-to-review">
           <p>Vous devez être connecté pour laisser un avis.</p>
@@ -552,10 +700,16 @@
       console.log("Quantité validée: " + quantityInput.value);
     }
     
-    // Remplacer les gestionnaires d'événements existants
-    decrementBtn.onclick = decrement;
-    incrementBtn.onclick = increment;
-    quantityInput.onchange = validate;
+    // Retirer tous les anciens événements en clonant les boutons
+    const newDecrementBtn = decrementBtn.cloneNode(true);
+    const newIncrementBtn = incrementBtn.cloneNode(true);
+    decrementBtn.parentNode.replaceChild(newDecrementBtn, decrementBtn);
+    incrementBtn.parentNode.replaceChild(newIncrementBtn, incrementBtn);
+    
+    // Attacher les nouveaux événements (une seule fois)
+    newDecrementBtn.addEventListener('click', decrement, {once: false});
+    newIncrementBtn.addEventListener('click', increment, {once: false});
+    quantityInput.addEventListener('change', validate);
     
     // Valider la valeur initiale
     validate();
@@ -758,86 +912,82 @@
 </script>
 
 <script>
-  // Rating functionality
-  function setRating(rating) {
-    document.getElementById('rating-value').value = rating;
+  // Rating functionality - VERSION ULTRA SIMPLE
+  window.addEventListener('load', function() {
+    console.log('========== DEBUT INITIALISATION ETOILES ==========');
     
-    const stars = document.querySelectorAll('.rating-btn');
-    stars.forEach((star, index) => {
-      if (index < rating) {
-        star.classList.add('active');
-      } else {
-        star.classList.remove('active');
+    // Attendre un peu pour être sûr que tout est chargé
+    setTimeout(function() {
+      const starContainer = document.getElementById('star-rating');
+      console.log('Container trouvé:', starContainer);
+      
+      if (!starContainer) {
+        console.error('❌ ERREUR: Container #star-rating non trouvé!');
+        console.log('Formulaire existe?', document.getElementById('review-form'));
+        return;
       }
-    });
-  }
-  
-  // Initialize with 5 stars
-  document.addEventListener('DOMContentLoaded', function() {
-    setRating(5);
-    
-    // Ajouter les gestionnaires d'événements pour les boutons de notation
-    document.querySelectorAll('.rating-btn').forEach(button => {
-      button.addEventListener('click', function() {
-        const rating = parseInt(this.dataset.rating);
-        setRating(rating);
+      
+      const stars = starContainer.querySelectorAll('.star-button');
+      console.log('✅ Nombre d\'étoiles trouvées:', stars.length);
+      
+      if (stars.length === 0) {
+        console.error('❌ ERREUR: Aucune étoile trouvée!');
+        return;
+      }
+      
+      const ratingInput = document.getElementById('rating-value');
+      console.log('Input rating trouvé:', ratingInput);
+      
+      // Fonction pour mettre à jour les étoiles
+      window.updateStars = function(rating) {
+        console.log('🌟 updateStars appelée avec rating:', rating);
+        
+        if (ratingInput) {
+          ratingInput.value = rating;
+          console.log('✅ Input mis à jour:', rating);
+        }
+        
+        // Changer la couleur de chaque étoile
+        for (let i = 0; i < stars.length; i++) {
+          if (i < rating) {
+            stars[i].style.color = '#00ff41';
+            stars[i].style.fontWeight = 'bold';
+            console.log('✅ Étoile', (i+1), 'VERTE');
+          } else {
+            stars[i].style.color = '#666';
+            stars[i].style.fontWeight = 'normal';
+            console.log('⚪ Étoile', (i+1), 'GRISE');
+          }
+        }
+      };
+      
+      // Initialiser avec 5 étoiles
+      console.log('Initialisation avec 5 étoiles...');
+      updateStars(5);
+      
+      // Ajouter les événements
+      stars.forEach(function(star, index) {
+        console.log('Ajout event sur étoile', (index+1));
+        
+        star.onclick = function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          const rating = parseInt(this.getAttribute('data-rating'));
+          console.log('🖱️ CLIC sur étoile', rating);
+          updateStars(rating);
+          return false;
+        };
       });
-    });
+      
+      console.log('========== FIN INITIALISATION ETOILES ==========');
+    }, 500);
     
-    // Handle review form submission
+    // Gérer la soumission du formulaire d'avis
     const reviewForm = document.getElementById('review-form');
-    const formTitle = document.getElementById('review-form-title');
-    const cancelEditBtn = document.getElementById('cancel-edit-btn');
-    let isEditing = false;
-    let editingReviewId = null;
-    
-    // Gérer les boutons de modification d'avis
-    const editButtons = document.querySelectorAll('.edit-review-btn');
-    editButtons.forEach(button => {
-      button.addEventListener('click', function() {
-        const reviewId = this.dataset.id;
-        const rating = parseInt(this.dataset.rating);
-        const title = this.dataset.title;
-        const comment = this.dataset.comment;
-        
-        // Remplir le formulaire avec les données existantes
-        setRating(rating);
-        document.querySelector('input[name="title"]').value = title;
-        document.querySelector('textarea[name="comment"]').value = comment;
-        
-        // Changer le titre du formulaire et afficher le bouton d'annulation
-        formTitle.textContent = 'Modifier votre avis';
-        cancelEditBtn.style.display = 'block';
-        
-        // Faire défiler jusqu'au formulaire
-        reviewForm.scrollIntoView({ behavior: 'smooth' });
-        
-        // Définir le mode d'édition
-        isEditing = true;
-        editingReviewId = reviewId;
-      });
-    });
-    
-    // Gérer le bouton d'annulation
-    cancelEditBtn.addEventListener('click', function() {
-      // Réinitialiser le formulaire
-      reviewForm.reset();
-      setRating(5);
-      
-      // Réinitialiser l'interface
-      formTitle.textContent = 'Ajouter un avis';
-      cancelEditBtn.style.display = 'none';
-      
-      // Réinitialiser le mode d'édition
-      isEditing = false;
-      editingReviewId = null;
-    });
-    
     if (reviewForm) {
       reviewForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
-        const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
         const rating = document.getElementById('rating-value').value;
         const title = document.querySelector('input[name="title"]').value;
         const comment = document.querySelector('textarea[name="comment"]').value;
@@ -860,33 +1010,6 @@
           const responseDiv = document.getElementById('review-response');
           
           if (data.status === 'success') {
-            if (isEditing) {
-              // Mettre à jour l'avis existant dans le DOM
-              const reviewCard = document.getElementById(`review-${editingReviewId}`);
-              if (reviewCard) {
-                const reviewTitle = reviewCard.querySelector('.review-title');
-                const reviewContent = reviewCard.querySelector('.review-content');
-                const reviewStars = reviewCard.querySelectorAll('.stars > span');
-                
-                reviewTitle.textContent = title;
-                reviewContent.innerHTML = comment.replace(/\n/g, '<br>');
-                
-                // Mettre à jour les étoiles
-                reviewStars.forEach((star, index) => {
-                  if (index < rating) {
-                    star.className = 'star';
-                  } else {
-                    star.className = 'star-empty';
-                  }
-                });
-                
-                // Revenir en mode ajout
-                formTitle.textContent = 'Ajouter un avis';
-                cancelEditBtn.style.display = 'none';
-                isEditing = false;
-                editingReviewId = null;
-              }
-            } else {
               // Création d'un nouvel avis et ajout au DOM
               const reviewsContainer = document.querySelector('.reviews-section');
               const noReviewsMessage = document.querySelector('.reviews-section p');
@@ -910,25 +1033,12 @@
                 }
               }
               
-              // Ajouter le bouton de modification pour le nouvel avis
-              const editButton = `
-                <button type="button" class="edit-review-btn" 
-                        data-id="new-${Date.now()}" 
-                        data-rating="${rating}" 
-                        data-title="${title}" 
-                        data-comment="${comment}"
-                        style="background: none; border: none; color: hsl(142, 100%, 50%); cursor: pointer; margin-left: 1rem; font-size: 0.875rem;">
-                  Modifier
-                </button>
-              `;
-              
               newReview.innerHTML = `
                 <div class="review-card-header">
                   <div>
                     <h3 class="review-title">${title}</h3>
                     <div class="review-meta">
                       Par ${data.user} maintenant
-                      ${editButton}
                     </div>
                   </div>
                   <div class="stars">
@@ -943,22 +1053,6 @@
               // Insérer juste après le header
               const reviewsHeader = document.querySelector('.reviews-header');
               reviewsHeader.insertAdjacentElement('afterend', newReview);
-              
-              // Ajouter l'écouteur d'événement au nouveau bouton de modification
-              const newEditButton = newReview.querySelector('.edit-review-btn');
-              newEditButton.addEventListener('click', function() {
-                setRating(parseInt(this.dataset.rating));
-                document.querySelector('input[name="title"]').value = this.dataset.title;
-                document.querySelector('textarea[name="comment"]').value = this.dataset.comment;
-                
-                formTitle.textContent = 'Modifier votre avis';
-                cancelEditBtn.style.display = 'block';
-                
-                reviewForm.scrollIntoView({ behavior: 'smooth' });
-                
-                isEditing = true;
-                editingReviewId = this.dataset.id;
-              });
             }
             
             // Mise à jour du compteur et de la note moyenne

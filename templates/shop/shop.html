@@ -339,6 +339,73 @@
     .toast-icon {
       font-size: 1.25rem;
     }
+    
+    /* Styles pour les filtres */
+    .filter-btn {
+      background: hsl(240, 5%, 15%);
+      border: 1px solid hsl(240, 5%, 25%);
+      color: hsl(240, 5%, 95%);
+      padding: 0.5rem 1rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: inherit;
+      transition: background-color 0.2s;
+    }
+    
+    .filter-btn:hover {
+      background-color: hsl(240, 5%, 20%);
+    }
+    
+    .filter-options {
+      margin-top: 1.5rem;
+      padding: 1.5rem;
+      background-color: hsl(240, 5%, 8%);
+      border-radius: 0.5rem;
+      border: 1px solid hsl(240, 5%, 15%);
+      transition: all 0.3s ease;
+    }
+    
+    .filter-options.hidden {
+      display: none;
+    }
+    
+    .filter-title {
+      margin: 0 0 1rem 0;
+      font-size: 1.25rem;
+      color: hsl(142, 100%, 50%);
+    }
+    
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    
+    .tag {
+      padding: 0.5rem 1rem;
+      background-color: hsl(240, 5%, 15%);
+      color: hsl(240, 5%, 70%);
+      border-radius: 0.25rem;
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+    
+    .tag:hover {
+      background-color: hsl(240, 5%, 20%);
+      color: hsl(142, 100%, 50%);
+    }
+    
+    .tag.active {
+      background-color: hsl(142, 100%, 50%);
+      color: hsl(0, 0%, 0%);
+      font-weight: 600;
+      border-color: hsl(142, 100%, 50%);
+    }
   </style>
 </head>
 <body>
@@ -431,9 +498,26 @@
             </h3>
             <p class="card-text">{{ product.category.name }}</p>
             <p class="card-price">{{ product.price }} FCFA</p>
-            <button class="card-btn add-to-cart" data-product-id="{{ product.id }}">
-              Ajouter au panier
-            </button>
+            
+            {% comment %} Vérifier si l'utilisateur est le propriétaire du produit {% endcomment %}
+            {% if product.vendor and user.is_authenticated and user.profile.is_vendor and product.vendor == user.profile.vendor %}
+              {# L'utilisateur est le propriétaire de ce produit #}
+              <a href="{% url 'shop:vendor_product_detail' product.id %}" class="card-btn" style="background-color: hsl(240, 5%, 20%); border: 1px solid hsl(142, 100%, 50%); display: flex; align-items: center; justify-content: center; gap: 0.5rem; text-decoration: none;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                <span>Votre produit</span>
+              </a>
+            {% else %}
+              {# L'utilisateur n'est PAS le propriétaire - Afficher le bouton d'achat #}
+              {% if product.stock > 0 %}
+              <button class="card-btn add-to-cart" data-product-id="{{ product.id }}">
+                Ajouter au panier
+              </button>
+              {% else %}
+              <button class="card-btn" disabled style="background-color: hsl(0, 84%, 60%); cursor: not-allowed; opacity: 0.6;">
+                Rupture de stock
+              </button>
+              {% endif %}
+            {% endif %}
           </div>
         </div>
         {% endfor %}
@@ -604,6 +688,16 @@
         });
       });
     });
+    
+    // Gestion des filtres
+    const filterBtn = document.querySelector('[data-target="filter-options"]');
+    const filterOptions = document.getElementById('filter-options');
+    
+    if (filterBtn && filterOptions) {
+      filterBtn.addEventListener('click', function() {
+        filterOptions.classList.toggle('hidden');
+      });
+    }
   });
   </script>
 </body>

@@ -66,6 +66,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ['created', 'status']
+    http_method_names = ['get', 'post', 'patch', 'head', 'options']  # Exclude DELETE
     
     def get_queryset(self):
         user = self.request.user

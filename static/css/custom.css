@@ -1,0 +1,217 @@
+/* Styles pour le contenu formaté en Markdown */
+
+/* Styles de base pour le contenu formaté */
+.blog-content,
+.product-description {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--color-text);
+}
+
+/* Titres */
+.blog-content h1,
+.product-description h1 {
+  font-size: 2rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  font-weight: 700;
+  color: var(--color-heading);
+}
+
+.blog-content h2,
+.product-description h2 {
+  font-size: 1.75rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  color: var(--color-heading);
+}
+
+.blog-content h3,
+.product-description h3 {
+  font-size: 1.5rem;
+  margin-top: 1.25rem;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  color: var(--color-heading);
+}
+
+.blog-content h4,
+.product-description h4 {
+  font-size: 1.25rem;
+  margin-top: 1.25rem;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  color: var(--color-heading);
+}
+
+/* Paragraphes */
+.blog-content p,
+.product-description p {
+  margin-bottom: 1.25rem;
+}
+
+/* Listes */
+.blog-content ul,
+.blog-content ol,
+.product-description ul,
+.product-description ol {
+  margin-bottom: 1.25rem;
+  margin-left: 1.5rem;
+}
+
+.blog-content ul li,
+.product-description ul li {
+  list-style-type: disc;
+  margin-bottom: 0.5rem;
+}
+
+.blog-content ol li,
+.product-description ol li {
+  list-style-type: decimal;
+  margin-bottom: 0.5rem;
+}
+
+/* Style amélioré pour les listes */
+.blog-content .styled-list,
+.product-description .styled-list {
+  margin-left: 0;
+  padding-left: 1.5rem;
+}
+
+.blog-content .styled-list li,
+.product-description .styled-list li {
+  margin-bottom: 0.75rem;
+  position: relative;
+}
+
+/* Blocs de code */
+.blog-content pre,
+.product-description pre {
+  background-color: hsl(240, 5%, 12%);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+  border: 1px solid hsl(240, 5%, 20%);
+}
+
+.blog-content code,
+.product-description code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  color: hsl(142, 100%, 75%);
+  background-color: hsla(142, 100%, 50%, 0.1);
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+}
+
+.blog-content pre code,
+.product-description pre code {
+  background-color: transparent;
+  padding: 0;
+  color: hsl(142, 100%, 75%);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  display: block;
+}
+
+.blog-content .code-block,
+.product-description .code-block {
+  position: relative;
+  border: 1px solid hsl(240, 5%, 20%);
+}
+
+/* Citations */
+.blog-content blockquote,
+.product-description blockquote {
+  border-left: 4px solid hsl(142, 100%, 50%);
+  padding-left: 1rem;
+  margin: 1.5rem 0;
+  font-style: italic;
+  color: hsl(240, 5%, 75%);
+}
+
+/* Tableaux */
+.blog-content table,
+.product-description table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.5rem;
+  border: 1px solid hsl(240, 5%, 20%);
+}
+
+.blog-content th,
+.blog-content td,
+.product-description th,
+.product-description td {
+  padding: 0.75rem;
+  text-align: left;
+  border: 1px solid hsl(240, 5%, 20%);
+}
+
+.blog-content th,
+.product-description th {
+  background-color: hsl(240, 5%, 15%);
+  font-weight: 600;
+}
+
+.blog-content tr:nth-child(even),
+.product-description tr:nth-child(even) {
+  background-color: hsl(240, 5%, 10%);
+}
+
+/* Liens */
+.blog-content a,
+.product-description a {
+  color: hsl(142, 100%, 50%);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.blog-content a:hover,
+.product-description a:hover {
+  text-decoration: underline;
+  color: hsl(142, 100%, 75%);
+}
+
+/* Images */
+.blog-content img,
+.product-description img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1.5rem 0;
+}
+
+/* Horizontal rule */
+.blog-content hr,
+.product-description hr {
+  border: 0;
+  height: 1px;
+  background-color: hsl(240, 5%, 20%);
+  margin: 2rem 0;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .blog-content h1,
+  .product-description h1 {
+    font-size: 1.75rem;
+  }
+  
+  .blog-content h2,
+  .product-description h2 {
+    font-size: 1.5rem;
+  }
+  
+  .blog-content h3,
+  .product-description h3 {
+    font-size: 1.25rem;
+  }
+  
+  .blog-content h4,
+  .product-description h4 {
+    font-size: 1.125rem;
+  }
+} 

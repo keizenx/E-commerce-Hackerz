@@ -21,6 +21,7 @@ class ShopCategorySerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     category = ShopCategorySerializer(read_only=True)
     category_id = serializers.IntegerField(write_only=True)
+    vendor_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
     vendor_name = serializers.SerializerMethodField()
     
     class Meta:
@@ -28,8 +29,11 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'slug', 'image', 'description', 'regular_price', 'price',
             'stock', 'available', 'created', 'updated', 'featured', 'category', 'category_id',
-            'vendor_name'
+            'vendor_id', 'vendor_name'
         ]
+        extra_kwargs = {
+            'image': {'required': False}
+        }
     
     def get_vendor_name(self, obj):
         if obj.vendor:

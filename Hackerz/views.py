@@ -447,20 +447,68 @@ def update_account(request):
     try:
         profile = request.user.profile
     except:
-        # Créer un profil s'il n'existe pas
         profile = Profile.objects.create(user=request.user)
     
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    
     if request.method == 'POST':
-        user_form = UserUpdateForm(request.POST, instance=request.user)
-        profile_form = ProfileUpdateForm(request.POST, instance=profile)
-        if user_form.is_valid() and profile_form.is_valid():
-            user_form.save()
-            profile_form.save()
-            messages.success(request, 'Votre compte a été mis à jour avec succès.')
+        form_type = request.POST.get('form_type')
+        
+        # Informations personnelles
+        if form_type == 'personal_info':
+            first_name = request.POST.get('first_name', '').strip()
+            last_name = request.POST.get('last_name', '').strip()
+            username = request.POST.get('display_name', '').strip()
+            new_email = request.POST.get('email', '').strip()
+            
+            # Vérifier si l'email a changé
+            if new_email != request.user.email:
+                # Vérifier si l'email est déjà utilisé
+                if User.objects.filter(email=new_email).exclude(id=request.user.id).exists():
+                    if is_ajax:
+                        return JsonResponse({
+                            'success': False,
+                            'message': 'Cet email est déjà utilisé par un autre compte.'
+                        }, status=400)
+                    messages.error(request, 'Cet email est déjà utilisé.')
+                    return redirect('profile')
+                
+                # TODO: Envoyer un email de vérification
+                # Pour l'instant, on met à jour directement
+                request.user.email = new_email
+            
+            request.user.first_name = first_name
+            request.user.last_name = last_name
+            request.user.username = username
+            request.user.save()
+            
+            if is_ajax:
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Vos informations ont été mises à jour avec succès.'
+                })
+            messages.success(request, 'Vos informations ont été mises à jour.')
             return redirect('profile')
-    else:
-        user_form = UserUpdateForm(instance=request.user)
-        profile_form = ProfileUpdateForm(instance=profile)
+        
+        # Adresse de livraison
+        elif form_type == 'shipping_address':
+            profile.address = request.POST.get('address', '').strip()
+            profile.city = request.POST.get('city', '').strip()
+            profile.postal_code = request.POST.get('postal_code', '').strip()
+            profile.country = request.POST.get('country', 'france')
+            profile.save()
+            
+            if is_ajax:
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Votre adresse a été mise à jour avec succès.'
+                })
+            messages.success(request, 'Votre adresse a été mise à jour.')
+            return redirect('profile')
+    
+    # GET request - render form page
+    user_form = UserUpdateForm(instance=request.user)
+    profile_form = ProfileUpdateForm(instance=profile)
 
     context = {
         'u_form': user_form,
@@ -786,4 +834,179 @@ def group_users_view(request, group_name):
         'users': users,
     }
     
-    return render(request, 'admin/group_users.html', context) 
+    return render(request, 'group_detail.html', context)
+
+@login_required
+def change_password(request):
+    """Vue pour changer le mot de passe de l'utilisateur"""
+    from django.contrib.auth import update_session_auth_hash
+    from django.contrib.auth.forms import PasswordChangeForm
+    
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            update_session_auth_hash(request, user)  # Important pour garder la session active
+            
+            if is_ajax:
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Votre mot de passe a été changé avec succès!'
+                })
+            
+            messages.success(request, 'Votre mot de passe a été changé avec succès!')
+            return redirect('profile')
+        else:
+            if is_ajax:
+                errors = []
+                for field, error_list in form.errors.items():
+                    for error in error_list:
+                        errors.append(str(error))
+                return JsonResponse({
+                    'success': False,
+                    'message': ' '.join(errors) if errors else 'Erreur lors du changement de mot de passe.'
+                }, status=400)
+            
+            messages.error(request, 'Veuillez corriger les erreurs ci-dessous.')
+    else:
+        form = PasswordChangeForm(request.user)
+    
+    return render(request, 'change_password.html', {'form': form})
+
+
+@login_required
+def toggle_2fa(request):
+    """Activer/désactiver la double authentification par email"""
+    import secrets
+    import base64
+    from django.core.mail import send_mail
+    from django.template.loader import render_to_string
+    from django.utils.html import strip_tags
+    
+    profile = request.user.profile
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'enable':
+            # Générer un code complexe en base64 (12 caractères aléatoires)
+            random_bytes = secrets.token_bytes(9)  # 9 bytes = 12 caractères en base64
+            verification_code = base64.b64encode(random_bytes).decode('utf-8')
+            
+            # Stocker le code temporairement dans le profil
+            profile.two_factor_secret = verification_code
+            profile.save()
+            
+            # Envoyer le code par email
+            try:
+                subject = 'Code de vérification 2FA - Hackerz'
+                html_message = f"""
+                <html>
+                    <head>
+                        <style>
+                            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                            .header {{ text-align: center; padding: 20px 0; background-color: #00ff41; }}
+                            .header h1 {{ color: #000; margin: 0; }}
+                            .content {{ padding: 20px; background-color: #f9f9f9; }}
+                            .code {{ font-size: 24px; font-weight: bold; text-align: center; 
+                                     background-color: #000; color: #00ff41; padding: 15px; 
+                                     border-radius: 5px; letter-spacing: 3px; margin: 20px 0; }}
+                            .footer {{ text-align: center; font-size: 12px; color: #999; padding-top: 20px; }}
+                        </style>
+                    </head>
+                    <body>
+                        <div class="container">
+                            <div class="header">
+                                <h1>🔐 Hackerz 2FA</h1>
+                            </div>
+                            <div class="content">
+                                <p>Bonjour {request.user.username},</p>
+                                <p>Vous avez demandé à activer la double authentification sur votre compte.</p>
+                                <p>Voici votre code de vérification :</p>
+                                <div class="code">{verification_code}</div>
+                                <p>Ce code est valable pour une seule utilisation. Entrez-le dans votre profil pour activer la 2FA.</p>
+                                <p>Si vous n'avez pas demandé cette activation, veuillez ignorer ce message.</p>
+                            </div>
+                            <div class="footer">
+                                <p>&copy; 2025 Hackerz. Tous droits réservés.</p>
+                            </div>
+                        </div>
+                    </body>
+                </html>
+                """
+                plain_message = f"Code de vérification 2FA Hackerz: {verification_code}"
+                
+                send_mail(
+                    subject,
+                    plain_message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [request.user.email],
+                    html_message=html_message,
+                    fail_silently=False,
+                )
+                
+                if is_ajax:
+                    return JsonResponse({
+                        'success': True,
+                        'message': f'Un code de vérification a été envoyé à {request.user.email}'
+                    })
+            except Exception as e:
+                print(f"Erreur envoi email: {str(e)}")
+                if is_ajax:
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'Erreur lors de l\'envoi du code par email.'
+                    }, status=500)
+        
+        elif action == 'verify':
+            token = request.POST.get('token', '').strip()
+            
+            if not profile.two_factor_secret:
+                if is_ajax:
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'Aucun code 2FA généré. Veuillez d\'abord demander un code.'
+                    }, status=400)
+                messages.error(request, 'Aucun code 2FA généré.')
+                return redirect('profile')
+            
+            # Vérifier le code
+            if token == profile.two_factor_secret:
+                profile.two_factor_enabled = True
+                # On garde le secret pour les futures connexions
+                profile.save()
+                
+                if is_ajax:
+                    return JsonResponse({
+                        'success': True,
+                        'message': 'Double authentification activée avec succès!'
+                    })
+                messages.success(request, 'Double authentification activée!')
+                return redirect('profile')
+            else:
+                if is_ajax:
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'Code invalide. Veuillez réessayer.'
+                    }, status=400)
+                messages.error(request, 'Code invalide.')
+                return redirect('profile')
+        
+        elif action == 'disable':
+            profile.two_factor_enabled = False
+            profile.two_factor_secret = None
+            profile.save()
+            
+            if is_ajax:
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Double authentification désactivée.'
+                })
+            messages.success(request, 'Double authentification désactivée.')
+            return redirect('profile')
+    
+    return redirect('profile')
