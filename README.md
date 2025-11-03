@@ -1,44 +1,85 @@
-# Django Hackerz E-Commerce# Django Hackerz E-Commerce # Django Hackerz
+# Django Hackerz E-Commerce# Django Hackerz E-Commerce# Django Hackerz E-Commerce # Django Hackerz
 
 
 
-A modern e-commerce platform with multi-vendor support, built with Django.
+A modern e-commerce platform with multi-vendor support.
 
 
 
-## What You Can Do![Django Hackerz Banner](https://img.shields.io/badge/Django-5.0.1-green.svg)Une plateforme e-commerce et blog sécurisée développée avec Django.
+## FeaturesA modern e-commerce platform with multi-vendor support, built with Django.
 
 
 
-**For Customers:**
+- Browse and purchase products with shopping cart
+
+- Multi-vendor system (sellers can manage their own products)
+
+- Discount coupons and promotions## What You Can Do![Django Hackerz Banner](https://img.shields.io/badge/Django-5.0.1-green.svg)Une plateforme e-commerce et blog sécurisée développée avec Django.
+
+- Wishlist and product reviews
+
+- Order tracking with PDF invoices
+
+- Integrated blog with comments
+
+- REST API with Swagger documentation**For Customers:**
+
+- Admin dashboard for platform management
 
 - Browse and search products by category, price, and availability
 
+## Quick Start
+
 - Add products to shopping cart and manage quantitiesA sleek and modern e-commerce platform with multi-vendor support, built with Django.##  Fonctionnalités
 
-- Apply discount coupons at checkout
+```bash
 
-- Save products to wishlist for later
+# Clone and setup- Apply discount coupons at checkout
 
-- Place orders and track their status
+git clone https://github.com/keizenx/E-commerce-Hackerz.git
+
+cd E-commerce-Hackerz- Save products to wishlist for later
+
+python -m venv venv
+
+venv\Scripts\activate  # Windows- Place orders and track their status
+
+pip install -r requirements.txt
 
 - Leave reviews and ratings on purchased products[![Platform](https://img.shields.io/badge/Platform-Web-blue.svg)](https://www.djangoproject.com/)### E-commerce
 
-- Receive order confirmations and invoices by email
+# Configure and run
 
-- Manage your profile and shipping addresses[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)- Système de panier d'achat
+cp .env.example .env- Receive order confirmations and invoices by email
+
+python manage.py migrate
+
+python manage.py createsuperuser- Manage your profile and shipping addresses[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)- Système de panier d'achat
+
+python manage.py runserver
+
+```
 
 
 
-**For Vendors:**[![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)](https://www.python.org/)- Gestion des produits par catégories
+Visit http://127.0.0.1:8000**For Vendors:**[![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)](https://www.python.org/)- Gestion des produits par catégories
 
-- Register as a seller and get approved by admin
 
-- Add, edit, and delete your own products[![Contributions](https://img.shields.io/badge/Contributions-Welcome-brightgreen.svg)](https://github.com/keizenx/E-commerce-Hackerz/pulls)- Interface vendeur
 
-- Upload product images and descriptions
+## Tech Stack- Register as a seller and get approved by admin
 
-- Manage product stock and pricing- Système d'avis et de notation
+
+
+Django 5.0.1 | Django REST Framework | SQLite | HTML/CSS/JavaScript- Add, edit, and delete your own products[![Contributions](https://img.shields.io/badge/Contributions-Welcome-brightgreen.svg)](https://github.com/keizenx/E-commerce-Hackerz/pulls)- Interface vendeur
+
+
+
+## License- Upload product images and descriptions
+
+
+
+MIT License - See LICENSE file- Manage product stock and pricing- Système d'avis et de notation
+
 
 - View sales statistics and performance
 
