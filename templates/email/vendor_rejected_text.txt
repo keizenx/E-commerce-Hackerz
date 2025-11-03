@@ -1,0 +1,30 @@
+MISE À JOUR DE VOTRE DEMANDE
+
+Concernant votre demande de vendeur
+====================================
+
+Bonjour {{ user.first_name|default:user.username }},
+
+Nous vous informons que votre demande pour devenir vendeur sur Hackerz E-Commerce n'a malheureusement pas été approuvée à ce stade.
+
+Nom de la boutique : {{ shop_name }}
+
+Raisons possibles :
+- Documents incomplets ou non conformes
+- Informations manquantes dans votre profil
+- Besoin de vérifications supplémentaires
+
+Ne vous découragez pas ! Vous pouvez :
+- Vérifier que tous vos documents sont valides et lisibles
+- Compléter toutes les informations de votre profil
+- Nous contacter pour plus d'informations : {{ site_url }}/contact/
+- Soumettre une nouvelle demande avec les corrections nécessaires
+
+Notre équipe reste à votre disposition pour vous accompagner dans votre démarche.
+
+Cordialement,
+L'équipe Hackerz E-Commerce
+
+---
+© 2025 Hackerz E-Commerce. Tous droits réservés.
+Visitez notre site : {{ site_url }}

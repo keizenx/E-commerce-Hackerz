@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mise à jour de votre demande de vendeur</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background-color: #ff6b6b;
+            color: #ffffff;
+            text-align: center;
+            padding: 30px 20px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .content h2 {
+            color: #ff6b6b;
+            margin-top: 0;
+        }
+        .content p {
+            margin: 15px 0;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #00ff41;
+            color: #000000;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .button:hover {
+            background-color: #00dd35;
+        }
+        .info-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            text-align: center;
+            padding: 20px;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Mise à jour de votre demande</h1>
+        </div>
+        
+        <div class="content">
+            <h2>Concernant votre demande de vendeur</h2>
+            
+            <p>Bonjour {{ user.first_name|default:user.username }},</p>
+            
+            <p>Nous vous informons que votre demande pour devenir vendeur sur Hackerz E-Commerce n'a malheureusement pas été approuvée à ce stade.</p>
+            
+            <div class="info-box">
+                <strong>Nom de la boutique :</strong> {{ shop_name }}
+            </div>
+            
+            <p><strong>Raisons possibles :</strong></p>
+            <ul>
+                <li>Documents incomplets ou non conformes</li>
+                <li>Informations manquantes dans votre profil</li>
+                <li>Besoin de vérifications supplémentaires</li>
+            </ul>
+            
+            <p>Ne vous découragez pas ! Vous pouvez :</p>
+            <ul>
+                <li>Vérifier que tous vos documents sont valides et lisibles</li>
+                <li>Compléter toutes les informations de votre profil</li>
+                <li>Nous contacter pour plus d'informations</li>
+                <li>Soumettre une nouvelle demande avec les corrections nécessaires</li>
+            </ul>
+            
+            <p>
+                <a href="{{ site_url }}/contact/" class="button">Nous contacter</a>
+            </p>
+            
+            <p>Notre équipe reste à votre disposition pour vous accompagner dans votre démarche.</p>
+            
+            <p>
+                Cordialement,<br>
+                <strong>L'équipe Hackerz E-Commerce</strong>
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p>&copy; 2025 Hackerz E-Commerce. Tous droits réservés.</p>
+            <p>
+                <a href="{{ site_url }}" style="color: #00ff41; text-decoration: none;">Visiter notre site</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

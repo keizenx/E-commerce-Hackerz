@@ -1,0 +1,31 @@
+FÉLICITATIONS !
+
+Votre demande de vendeur a été approuvée
+==========================================
+
+Bonjour {{ user.first_name|default:user.username }},
+
+Nous avons le plaisir de vous informer que votre demande pour devenir vendeur sur Hackerz E-Commerce a été APPROUVÉE.
+
+Nom de votre boutique : {{ shop_name }}
+
+Vous pouvez maintenant accéder à votre tableau de bord vendeur et commencer à ajouter vos produits.
+
+Accédez à votre tableau de bord : {{ site_url }}/shop/vendor/products/
+
+Ce que vous pouvez faire maintenant :
+- Ajouter des produits avec images et descriptions
+- Gérer votre inventaire et vos prix
+- Suivre vos ventes et statistiques
+- Gérer les commandes de vos clients
+
+Si vous avez des questions, n'hésitez pas à nous contacter.
+
+Bienvenue dans la communauté des vendeurs Hackerz !
+
+Cordialement,
+L'équipe Hackerz E-Commerce
+
+---
+© 2025 Hackerz E-Commerce. Tous droits réservés.
+Visitez notre site : {{ site_url }}

@@ -19,7 +19,7 @@ class VendorAdmin(admin.ModelAdmin):
     search_fields = ['shop_name', 'profile__user__username', 'profile__user__email']
     list_filter = ['is_approved', 'created']
     readonly_fields = ['created', 'updated', 'view_identity_document']
-    actions = ['approve_vendors']
+    actions = ['approve_vendors', 'reject_vendors']
     fieldsets = [
         ('Informations du vendeur', {
             'fields': ('profile', 'shop_name', 'description', 'logo', 'phone')
@@ -58,12 +58,100 @@ class VendorAdmin(admin.ModelAdmin):
     approval_actions.short_description = 'Actions'
     
     def approve_vendors(self, request, queryset):
-        count = queryset.update(is_approved=True)
+        from django.core.mail import EmailMultiAlternatives
+        from django.template.loader import render_to_string
+        from django.conf import settings
+        from django.contrib.sites.shortcuts import get_current_site
+        
+        count = 0
+        for vendor in queryset:
+            if not vendor.is_approved:
+                vendor.is_approved = True
+                vendor.save()
+                count += 1
+                
+                # Envoyer un email de confirmation
+                try:
+                    current_site = get_current_site(request)
+                    context = {
+                        'vendor': vendor,
+                        'shop_name': vendor.shop_name,
+                        'user': vendor.profile.user,
+                        'site_url': f"{'https' if request.is_secure() else 'http'}://{current_site.domain}",
+                    }
+                    
+                    html_message = render_to_string('email/vendor_approved.html', context)
+                    plain_message = render_to_string('email/vendor_approved_text.txt', context)
+                    
+                    subject = f'Votre demande de vendeur a été approuvée - {vendor.shop_name}'
+                    from_email = settings.DEFAULT_FROM_EMAIL
+                    to_email = vendor.profile.user.email
+                    
+                    email = EmailMultiAlternatives(
+                        subject=subject,
+                        body=plain_message,
+                        from_email=from_email,
+                        to=[to_email]
+                    )
+                    email.attach_alternative(html_message, "text/html")
+                    email.send(fail_silently=False)
+                    
+                except Exception as e:
+                    self.message_user(request, f"Erreur lors de l'envoi de l'email à {vendor.shop_name}: {str(e)}", level='ERROR')
+        
         self.message_user(
             request,
-            f"{count} vendeur{'s' if count > 1 else ''} {'ont' if count > 1 else 'a'} été approuvé{'s' if count > 1 else ''}."
+            f"{count} vendeur{'s' if count > 1 else ''} {'ont' if count > 1 else 'a'} été approuvé{'s' if count > 1 else ''} et notifié{'s' if count > 1 else ''} par email."
         )
     approve_vendors.short_description = "Approuver les vendeurs sélectionnés"
+    
+    def reject_vendors(self, request, queryset):
+        from django.core.mail import EmailMultiAlternatives
+        from django.template.loader import render_to_string
+        from django.conf import settings
+        from django.contrib.sites.shortcuts import get_current_site
+        
+        count = 0
+        for vendor in queryset:
+            if vendor.is_approved:
+                vendor.is_approved = False
+                vendor.save()
+                count += 1
+                
+                # Envoyer un email de rejet
+                try:
+                    current_site = get_current_site(request)
+                    context = {
+                        'vendor': vendor,
+                        'shop_name': vendor.shop_name,
+                        'user': vendor.profile.user,
+                        'site_url': f"{'https' if request.is_secure() else 'http'}://{current_site.domain}",
+                    }
+                    
+                    html_message = render_to_string('email/vendor_rejected.html', context)
+                    plain_message = render_to_string('email/vendor_rejected_text.txt', context)
+                    
+                    subject = f'Mise à jour de votre demande de vendeur - {vendor.shop_name}'
+                    from_email = settings.DEFAULT_FROM_EMAIL
+                    to_email = vendor.profile.user.email
+                    
+                    email = EmailMultiAlternatives(
+                        subject=subject,
+                        body=plain_message,
+                        from_email=from_email,
+                        to=[to_email]
+                    )
+                    email.attach_alternative(html_message, "text/html")
+                    email.send(fail_silently=False)
+                    
+                except Exception as e:
+                    self.message_user(request, f"Erreur lors de l'envoi de l'email à {vendor.shop_name}: {str(e)}", level='ERROR')
+        
+        self.message_user(
+            request,
+            f"{count} vendeur{'s' if count > 1 else ''} {'a' if count == 1 else 'ont'} été rejeté{'s' if count > 1 else ''} et notifié{'s' if count > 1 else ''} par email."
+        )
+    reject_vendors.short_description = "Rejeter les vendeurs sélectionnés"
     
     def get_urls(self):
         from django.urls import path
@@ -80,12 +168,45 @@ class VendorAdmin(admin.ModelAdmin):
     def approve_vendor(self, request, vendor_id):
         from django.shortcuts import get_object_or_404, redirect
         from django.contrib import messages
+        from django.core.mail import EmailMultiAlternatives
+        from django.template.loader import render_to_string
+        from django.conf import settings
+        from django.contrib.sites.shortcuts import get_current_site
         
         vendor = get_object_or_404(Vendor, id=vendor_id)
         vendor.is_approved = True
         vendor.save()
         
-        messages.success(request, f"Le vendeur {vendor.shop_name} a été approuvé avec succès.")
+        # Envoyer un email de confirmation
+        try:
+            current_site = get_current_site(request)
+            context = {
+                'vendor': vendor,
+                'shop_name': vendor.shop_name,
+                'user': vendor.profile.user,
+                'site_url': f"{'https' if request.is_secure() else 'http'}://{current_site.domain}",
+            }
+            
+            html_message = render_to_string('email/vendor_approved.html', context)
+            plain_message = render_to_string('email/vendor_approved_text.txt', context)
+            
+            subject = f'Votre demande de vendeur a été approuvée - {vendor.shop_name}'
+            from_email = settings.DEFAULT_FROM_EMAIL
+            to_email = vendor.profile.user.email
+            
+            email = EmailMultiAlternatives(
+                subject=subject,
+                body=plain_message,
+                from_email=from_email,
+                to=[to_email]
+            )
+            email.attach_alternative(html_message, "text/html")
+            email.send(fail_silently=False)
+            
+            messages.success(request, f"Le vendeur {vendor.shop_name} a été approuvé avec succès et notifié par email.")
+        except Exception as e:
+            messages.warning(request, f"Le vendeur {vendor.shop_name} a été approuvé mais l'email n'a pas pu être envoyé: {str(e)}")
+        
         return redirect('admin:Hackerz_vendor_changelist')
 
 class WishlistAdmin(admin.ModelAdmin):
