@@ -547,6 +547,30 @@ def become_vendor(request):
             vendor.save()
             profile.is_vendor = True
             profile.save()
+
+            # Notifier l'administrateur de la nouvelle demande vendeur
+            try:
+                admin_email = getattr(settings, "ADMIN_NOTIFICATION_EMAIL", settings.DEFAULT_FROM_EMAIL)
+                subject = "Nouvelle demande de vendeur"
+                message = (
+                    f"Un utilisateur a soumis une demande pour devenir vendeur.\n\n"
+                    f"Nom du shop : {vendor.shop_name}\n"
+                    f"Utilisateur : {request.user.get_full_name() or request.user.username}\n"
+                    f"Email : {request.user.email or 'non renseigné'}\n"
+                    f"Description : {vendor.description or 'non renseignée'}\n"
+                )
+                send_mail(
+                    subject=subject,
+                    message=message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[admin_email],
+                    fail_silently=False,
+                )
+            except Exception as e:
+                messages.warning(
+                    request,
+                    f"Votre demande a été enregistrée mais la notification n'a pas pu être envoyée ({e}).",
+                )
             
             if is_ajax:
                 return JsonResponse({

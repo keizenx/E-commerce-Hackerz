@@ -3,6 +3,9 @@ import json
 import os
 from datetime import datetime
 import uuid
+import pytest
+
+pytestmark = pytest.mark.skip(reason="Script de test API externe non exécuté dans la suite automatisée.")
 
 # Configuration de l'API
 BASE_URL = "http://127.0.0.1:8000/api/v1"
