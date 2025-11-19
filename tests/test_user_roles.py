@@ -9,6 +9,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
 from Hackerz_E_commerce.models import Product, Category
+from Hackerz.models import Vendor
 
 
 pytestmark = pytest.mark.django_db
@@ -158,4 +159,71 @@ def test_admin_can_approve_vendor(client, admin_user, vendor_user):
     assert response.status_code == 302
     vendor.refresh_from_db()
     assert vendor.is_approved is True
+
+
+@pytest.mark.django_db
+def test_registration_rejects_duplicate_credentials(client, create_user):
+    existing = create_user(username="dupuser", email="dup@example.com")
+
+    response = client.post(
+        reverse("register"),
+        {
+            "username": existing.username,
+            "first_name": "Dup",
+            "last_name": "User",
+            "email": existing.email,
+            "password1": "DupPass123!",
+            "password2": "DupPass123!",
+        },
+    )
+
+    assert response.status_code == 200
+    assert User.objects.filter(username="dupuser").count() == 1
+    body = response.content
+    assert (b"Un utilisateur avec ce nom existe" in body) or (b"Cet email est deja" in body) or (b"Cet email est d" in body)
+
+
+def test_non_vendor_cannot_access_vendor_dashboard(client, create_user):
+    user = create_user(username=_unique_name("basic"), email="basic@example.com")
+    client.force_login(user)
+
+    response = client.get(reverse("shop:vendor_products"))
+
+    assert response.status_code == 302
+    assert reverse("profile") in response.url
+
+
+def test_unapproved_vendor_cannot_add_product(client, create_user, category):
+    user = create_user(username=_unique_name("pending"), email="pending@example.com")
+    profile = user.profile
+    profile.is_vendor = True
+    profile.save()
+    Vendor.objects.create(
+        profile=profile,
+        shop_name="Pending Shop",
+        description="En attente d'approbation",
+        is_approved=False,
+    )
+
+    client.force_login(user)
+
+    response = client.post(
+        reverse("shop:add_product"),
+        data={
+            "name": "Produit refusé",
+            "category": category.id,
+            "price": "19.99",
+            "regular_price": "29.99",
+            "stock": "5",
+            "description": "Produit d'un vendeur non approuvé.",
+            "available": "on",
+            "featured": "",
+            "image": _gif_image("pending-product.gif"),
+        },
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+
+    assert response.status_code == 302
+    assert reverse("profile") in response.url
+    assert not Product.objects.filter(name="Produit refusé").exists()
 

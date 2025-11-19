@@ -389,6 +389,19 @@ def cart_add(request, product_id):
     
     # Récupérer le produit et les données
     product = get_object_or_404(Product, id=product_id)
+
+    # S'assurer que le produit est disponible et en stock
+    if product.stock <= 0 or not product.available:
+        if is_ajax:
+            return JsonResponse(
+                {
+                    'success': False,
+                    'message': "Ce produit n'est plus disponible pour le moment.",
+                },
+                status=400,
+            )
+        messages.error(request, "Ce produit n'est plus disponible pour le moment.")
+        return redirect('shop:product_detail', product_slug=product.slug)
     
     # Vérifier si l'utilisateur est le propriétaire du produit
     if product.vendor and hasattr(request.user, 'profile') and hasattr(request.user.profile, 'vendor'):
@@ -415,6 +428,18 @@ def cart_add(request, product_id):
     # S'assurer que la quantité est valide
     if quantity < 1:
         quantity = 1
+
+    if quantity > product.stock:
+        if is_ajax:
+            return JsonResponse(
+                {
+                    'success': False,
+                    'message': "La quantité demandée dépasse le stock disponible.",
+                },
+                status=400,
+            )
+        messages.error(request, "La quantité demandée dépasse le stock disponible.")
+        return redirect('shop:product_detail', product_slug=product.slug)
     
     # Récupérer ou créer le panier
     cart_id = _cart_id(request)
@@ -1235,14 +1260,14 @@ def edit_product(request, product_id):
 
 
 @login_required
-def delete_product(request, pk):
+def delete_product(request, product_id):
     """Supprimer un produit."""
     # Vérifier si l'utilisateur est un vendeur approuvé
     if not hasattr(request.user.profile, 'vendor') or not request.user.profile.vendor.is_approved:
         messages.error(request, "Vous devez être un vendeur approuvé pour supprimer des produits.")
         return redirect('profile')
     
-    product = get_object_or_404(Product, pk=pk, vendor=request.user.profile.vendor)
+    product = get_object_or_404(Product, pk=product_id, vendor=request.user.profile.vendor)
     
     if request.method == 'POST':
         product.delete()
@@ -1292,8 +1317,8 @@ def generate_invoice_pdf(request, order_id):
     
     # Calculer les totaux
     subtotal = sum(item.price * item.quantity for item in order_items)
-    tax = subtotal * 0.2  # TVA à 20%
-    shipping = 5.99  # Frais de livraison fixes
+    tax = subtotal * Decimal('0.2')  # TVA à 20%
+    shipping = Decimal('5.99')  # Frais de livraison fixes
     total = subtotal + tax + shipping
     
     # Générer un numéro de facture

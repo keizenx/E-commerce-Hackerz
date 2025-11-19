@@ -36,3 +36,27 @@ def test_vendor_request_sends_notification_email(client, create_user, tmp_path, 
     assert "Boutique Test" in notification.body
     assert "applicant@example.com" in notification.body
 
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+)
+def test_vendor_request_without_identity_document_fails(client, create_user):
+    user = create_user(username="no-doc", email="no-doc@example.com")
+    client.force_login(user)
+
+    response = client.post(
+        reverse("become_vendor"),
+        {
+            "shop_name": "Boutique incomplète",
+            "description": "Je n'ai pas fourni de document.",
+            "phone": "+33102030405",
+        },
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+
+    assert response.status_code == 400
+    payload = response.json()
+    assert payload["success"] is False
+    assert user.profile.is_vendor is False
+    assert "document" in payload["message"].lower() or "champ" in payload["message"].lower()
+    assert len(mail.outbox) == 0

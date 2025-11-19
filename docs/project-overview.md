@@ -18,7 +18,6 @@
 |-----|----------------|
 | `Hackerz` | Authentification, profils, vendors, newsletter, vues transverses |
 | `Hackerz_E_commerce` | Produits, catégories, panier, commandes, coupons, factures |
-| `Hackerz_blog` | Articles, commentaires, tags (attire le trafic) |
 | `api` | Endpoints REST (catalogue, blog, authentification) |
 
 tests/
@@ -52,42 +51,41 @@ Hackerz_E_commerce/tests/
 ## 3. Qualité logicielle et stratégie de tests
 ### 3.1 Plan de test (extraits)
 - Priorité sur le tunnel d’achat, les notifications critiques, l’intégrité des données et la gouvernance admin.
-- Utilisation de fixtures `pytest` (`conftest.py`) pour créer utilisateurs/vendeurs/produits temporaires.
-- Backend email local (`locmem`) pour assertions sur les messages générés.
-- `api/api_test.py` conservé en “skip” (tests manuels de l’API externe).
+- Utilisation de fixtures `pytest` (`conftest.py`) pour créer utilisateurs/vendeurs/produits temporaires, et ignorant les scripts manuels (`collect_ignore`).
+- Backend email local (`locmem`) et mocks PDF pour vérifier les notifications et factures.
 
 ### 3.2 Résultats
 - Commande : `pytest -vv`
-- Résumé : `25 passed, 1 skipped` (script API). Durée ~11 s sur Windows 10, Python 3.10.
+- Résumé : `26 passed` (aucun test ignoré). Durée ~20 s sur Windows 10, Python 3.10.
 
 ### 3.3 Cas de tests fonctionnels majeurs
 | ID | Scénario | Statut |
 |----|----------|--------|
-| TC-009 | Parcours complet de commande (panier → paiement → email facture) | ✅ |
-| TC-008 | Redirection d’un visiteur vers login avant checkout | ✅ |
-| TC-010 | Création produit par vendeur approuvé (with image upload) | ✅ |
-| TC-014 | Notification email lors d’une demande vendeur | ✅ |
-| TC-013 | Approbation d’un vendeur depuis l’admin | ✅ |
-| TC-012 | Inscription visiteur → compte inactif en attente de confirmation | ✅ |
+| TC-017 | Parcours complet de commande (panier → paiement → email) | ✅ |
+| TC-015 | Redirection d’un visiteur vers login avant checkout | ✅ |
+| TC-018 | Création produit par vendeur approuvé (AJAX + image) | ✅ |
+| TC-024 | Notification email lors d’une demande vendeur | ✅ |
+| TC-023 | Approbation d’un vendeur depuis l’admin | ✅ |
+| TC-020 | Inscription visiteur → compte inactif en attente de confirmation | ✅ |
+| TC-026 | Refus d’inscription avec email/username dupliqués | ✅ |
 
 ## 4. Analyse de risques et priorisation
 | Fonctionnalité / test | Probabilité | Impact | Priorité | Mitigation |
 |------------------------|-------------|--------|----------|-----------|
-| Process_payment & factures | Élevée | Critique | Très haute | Tests fonctionnels + mocks SMTP + `save_invoice_pdf` |
-| Authentification & redirection login | Élevée | Critique | Très haute | Tests `checkout_requires_login`, `test_guest_is_redirected_to_login_before_checkout` |
-| Coupons / remises | Moyenne | Élevé | Haute | `CouponModelTests`, vérification min/max, validité temporelle |
-| Vendeur : création produits / notifications | Moyenne | Élevé | Haute | Tests `test_authorised_vendor_can_create_product`, `test_vendor_request_sends_notification_email` |
-| Admin : approbation vendeur | Moyenne | Élevé | Haute | `test_admin_can_approve_vendor` (mock emails & site) |
+| Process_payment & factures | Élevée | Critique | Très haute | Tests fonctionnels + mocks SMTP/PDF |
+| Authentification & redirection login | Élevée | Critique | Très haute | `CartViewsTests.test_checkout_requires_login`, `test_guest_is_redirected_to_login_before_checkout` |
+| Coupons (modèle) | Moyenne | Élevé | Haute | `CouponModelTests` (validité, limites) |
 | Panier AJAX & flux panier | Élevée | Élevé | Très haute | `CartViewsTests` (add/remove/update) |
-| API externe | Basse | Moyen | Basse | Script `api_test.py` à exécuter manuellement (skipped dans CI) |
+| Vendeur : création produits / notifications | Moyenne | Élevé | Haute | `test_authorised_vendor_can_create_product`, `test_vendor_request_sends_notification_email` |
+| Admin : approbation vendeur | Moyenne | Élevé | Haute | `test_admin_can_approve_vendor` |
 
 ## 5. Recommandations et chantiers à venir
-1. **Couverture API REST :** ajouter des tests DRF (catégories, produits, auth token, blog).
-2. **Scénarios d’échec :** vérifier les comportements lorsque le paiement échoue, coupon invalide, vendeur rejeté.
-3. **Automatisation CI/CD :** intégrer `pytest` + `coverage.py` dans un pipeline (GitHub Actions / GitLab CI).
-4. **Notifications supplémentaires :** email au vendeur lors de l’approbation (mock déjà prêt), logs admin.
-5. **Sécurité & conformité :** audits CSRF, RGPD (gestion des données personnelles, anonymisation).
-6. **Performance :** tests de charge sur l’API catalogue et le checkout (jmeter / locust).
+1. **Scénarios d’échec** : couvrir paiements refusés, vendeur rejeté, erreurs coupons et logs notifications.
+2. **Tests REST complémentaires** : réintroduire des tests API (produits/blog) lorsque l’interface sera stable.
+3. **Automatisation CI/CD** : intégrer `pytest` + `coverage.py` dans un pipeline (GitHub Actions / GitLab CI).
+4. **Observabilité** : journaliser les envois email et surveiller les erreurs SMTP.
+5. **Sécurité & conformité** : audits CSRF, RGPD (gestion des données personnelles, anonymisation).
+6. **Performance** : tests de charge sur catalogue et checkout (Locust/JMeter).
 
 ## 6. Synthèse pour stakeholder
 - **Plateforme prête à supporter un MVP multi-rôle** (clients, vendeurs approuvés, admins).

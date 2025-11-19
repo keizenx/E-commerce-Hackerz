@@ -93,3 +93,42 @@ class CartViewsTests(TestCase):
         self.assertEqual(response.context["total"], Decimal("999.98"))
         self.assertTrue(response.context["cart_items"])
 
+    def test_cart_add_fails_when_product_out_of_stock(self):
+        self.product.stock = 0
+        self.product.available = False
+        self.product.save(update_fields=["stock", "available"])
+
+        self.client.login(username="player", password="secret123")
+
+        response = self.client.post(
+            reverse("shop:cart_add", args=[self.product.id]),
+            data=json.dumps({"quantity": 1}),
+            content_type="application/json",
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        payload = response.json()
+        self.assertFalse(payload["success"])
+        self.assertIn("n'est plus disponible", payload["message"])
+        self.assertEqual(CartItem.objects.count(), 0)
+
+    def test_cart_add_fails_when_quantity_exceeds_stock(self):
+        self.product.stock = 2
+        self.product.save(update_fields=["stock"])
+
+        self.client.login(username="player", password="secret123")
+
+        response = self.client.post(
+            reverse("shop:cart_add", args=[self.product.id]),
+            data=json.dumps({"quantity": 5}),
+            content_type="application/json",
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        payload = response.json()
+        self.assertFalse(payload["success"])
+        self.assertIn("quantité demandée dépasse", payload["message"])
+        self.assertEqual(CartItem.objects.count(), 0)
+

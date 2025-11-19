@@ -19,6 +19,9 @@ from Hackerz_E_commerce.models import (
 from Hackerz.models import Profile, Vendor, Wishlist
 
 
+collect_ignore = ["api/api_test.py"]
+
+
 @pytest.fixture
 def client():
     """Client Django pour les tests."""
